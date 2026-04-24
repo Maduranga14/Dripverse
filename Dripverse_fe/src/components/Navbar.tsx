@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Search, User, ShoppingBag, Heart, Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, User, ShoppingBag, Heart, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const navLinks = [
   { label: "New Drops", href: "/category/new-drops" },
@@ -14,6 +14,29 @@ const navLinks = [
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("jwtToken");
+    if (token) {
+      setIsLoggedIn(true);
+      try {
+        const payload = token.split('.')[1];
+        const decoded = JSON.parse(atob(payload));
+        setUsername(decoded.sub || "");
+      } catch (e) {
+        console.error("Error decoding token");
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("jwtToken");
+    setIsLoggedIn(false);
+    navigate("/login");
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
@@ -72,15 +95,37 @@ const Navbar = () => {
             <Link to="/favourites" className="text-muted-foreground hover:text-primary transition-colors hidden sm:block">
               <Heart size={20} />
             </Link>
-            <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
-              <User size={20} />
-            </Link>
             <Link to="/cart" className="relative text-muted-foreground hover:text-primary transition-colors">
               <ShoppingBag size={20} />
               <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                 2
               </span>
             </Link>
+            {isLoggedIn ? (
+              <div className="relative group pt-2 pb-2">
+                <button className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">
+                  <User size={20} />
+                  <span className="text-sm font-medium hidden sm:block">Hi, {username}</span>
+                </button>
+                <div className="absolute right-0 top-full mt-0 w-48 bg-secondary border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="py-2 flex flex-col">
+                    <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+                      <LayoutDashboard size={16} /> Dashboard
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-background transition-colors text-left"
+                    >
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
+                <User size={20} />
+              </Link>
+            )}
           </div>
         </div>
       </div>
