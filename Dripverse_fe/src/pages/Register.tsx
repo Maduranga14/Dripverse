@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { fetchWithoutAuth } from "@/lib/api";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,37 +17,23 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name || !email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
     setIsLoading(true);
+  
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
+      await fetchWithoutAuth("/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
-          username: name,
+          username:name,
           email,
-          password,
-        }),
+          password
+        })
       });
 
-      const data = await response.text();
-
-      if (response.ok) {
-        toast.success("Account created successfully!");
-        navigate("/login");
-      } else {
-        toast.error(data || "Registration failed. Please try again.");
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast.error("Network error. Make sure the backend server is running.");
+      toast.success("Registration successful! Please sign in. ");
+      navigate("/login");
+    } catch (error: any) {
+      console.error("BACKEND REJECTED REGISTRATION. REASON:", error.message);
+      toast.error(error.message || "Registration failed. Please try again. ");
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +64,8 @@ const Register = () => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
                   type="text"
-                  placeholder="Full name"
+                  required
+                  placeholder="Username"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-secondary border border-border rounded-lg pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
@@ -88,6 +76,7 @@ const Register = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
                   type="email"
+                  required
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -99,6 +88,7 @@ const Register = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
                   type={showPassword ? "text" : "password"}
+                  required
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -114,7 +104,7 @@ const Register = () => {
               </div>
 
               <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 mt-0.5 rounded border-border bg-secondary accent-primary" />
+                <input type="checkbox" required className="w-4 h-4 mt-0.5 rounded border-border bg-secondary accent-primary" />
                 I agree to the <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
               </label>
 
@@ -123,7 +113,7 @@ const Register = () => {
                 whileTap={{ scale: isLoading ? 1 : 0.98 }}
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-primary text-primary-foreground font-display text-lg tracking-wider py-3 rounded-lg hover-neon transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground font-display text-lg tracking-wider py-3 rounded-lg hover-neon transition-all disabled:opacity-50"
               >
                 {isLoading ? "CREATING..." : "CREATE ACCOUNT"}
               </motion.button>
