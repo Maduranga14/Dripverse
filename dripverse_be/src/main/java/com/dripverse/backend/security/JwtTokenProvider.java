@@ -49,7 +49,11 @@ public class JwtTokenProvider {
             Jwts.parser().verifyWith(key()).build().parseSignedClaims(authToken);
             return true;
         } catch (MalformedJwtException | ExpiredJwtException | UnsupportedJwtException | IllegalArgumentException ex) {
-
+            System.err.println("JWT VALIDATION FAILED:");
+            ex.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("UNEXPECTED JWT EXCEPTION:");
+            e.printStackTrace();
         }
         return false;
     }

@@ -14,28 +14,17 @@ const navLinks = [
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("jwtToken");
-    if (token) {
-      setIsLoggedIn(true);
-      try {
-        const payload = token.split('.')[1];
-        const decoded = JSON.parse(atob(payload));
-        setUsername(decoded.sub || "");
-      } catch (e) {
-        console.error("Error decoding token");
-      }
-    }
-  }, []);
+  const token = localStorage.getItem("token");
+  const userStr = localStorage.getItem("user");
+  const user = userStr ? JSON.parse(userStr) : null;
 
   const handleLogout = () => {
-    localStorage.removeItem("jwtToken");
-    setIsLoggedIn(false);
-    navigate("/login");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login")
   };
 
   return (
@@ -101,25 +90,48 @@ const Navbar = () => {
                 2
               </span>
             </Link>
-            {isLoggedIn ? (
-              <div className="relative group pt-2 pb-2">
-                <button className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">
+            {user ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
                   <User size={20} />
-                  <span className="text-sm font-medium hidden sm:block">Hi, {username}</span>
+                  <span className="hidden sm:inline-block">Hi, {user.username || user.firstName || 'User'}</span>
                 </button>
-                <div className="absolute right-0 top-full mt-0 w-48 bg-secondary border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="py-2 flex flex-col">
-                    <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
-                      <LayoutDashboard size={16} /> Dashboard
-                    </Link>
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-background transition-colors text-left"
+                
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-background/95 backdrop-blur-md border border-border z-50 overflow-hidden"
                     >
-                      <LogOut size={16} /> Logout
-                    </button>
-                  </div>
-                </div>
+                      <div className="py-1 flex flex-col">
+                        <Link
+                          to={user.role === "ROLE_ADMIN" ? "/admin" : "/dashboard"}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <LayoutDashboard size={16} />
+                          Dashboard
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors text-left"
+                        >
+                          <LogOut size={16} />
+                          Logout
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
@@ -141,13 +153,13 @@ const Navbar = () => {
           >
             <div className="px-4 py-4 flex flex-col gap-3">
               {navLinks.map((link) => (
-                <a
-                  key={link}
-                  href="#"
+                <Link
+                  key={link.label}
+                  to={link.href}
                   className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors uppercase tracking-widest py-2"
                 >
-                  {link}
-                </a>
+                  {link.label}
+                </Link>
               ))}
               <a
                 href="#"

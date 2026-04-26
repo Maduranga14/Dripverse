@@ -11,6 +11,9 @@ import Category from "./pages/Category";
 import Favourites from "./pages/Favourites";
 import Cart from "./pages/Cart";
 import ProductDetail from "./pages/ProductDetail";
+import CustomerDashboard from "./pages/CustomerDashboard";
+import ProtectedRoute from "./components/ui/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,15 @@ const App = () => (
           <Route path="/favourites" element={<Favourites />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+
+
+          <Route element= {<ProtectedRoute requiredRole="ROLE_ADMIN" />}>
+            <Route path="/admin" element= {<AdminDashboard />} />
+          </Route>
+          
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<CustomerDashboard />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
