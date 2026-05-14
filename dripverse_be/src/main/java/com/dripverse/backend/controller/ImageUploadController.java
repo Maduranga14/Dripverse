@@ -45,7 +45,7 @@ public class ImageUploadController {
             Files.write(path, bytes);
 
 
-            String fileUrl = "/upload/" + newFilename;
+            String fileUrl = "/uploads/" + newFilename;
             return ResponseEntity.ok(fileUrl);
         } catch (IOException e) {
             e.printStackTrace();
