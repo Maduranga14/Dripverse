@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWithAuth } from "@/lib/api";
-// Added this comment to trigger Vite's HMR and clear the module cache
+import AddCategoryModal from "@/components/AddCategoryModal";
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const { data: categories = [] } = useQuery({
@@ -17,6 +17,7 @@ const AdminDashboard = () => {
   });
   const [newProduct, setNewProduct] = useState({ name: "", description: "", price: 0, stock: 0, categoryId: "", imageUrl: "" });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showcaegoryModal, setShowCategoryModal] = useState(false);
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -33,7 +34,7 @@ const AdminDashboard = () => {
       return res.text();
     }
   });
-  
+
   const createProductMutation = useMutation({
     mutationFn: (product: any) => fetchWithAuth("/products", {
       method: "POST",
@@ -48,7 +49,7 @@ const AdminDashboard = () => {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     let finalImageUrl = newProduct.imageUrl;
-    
+
     if (selectedFile) {
       try {
         finalImageUrl = await uploadImageMutation.mutateAsync(selectedFile);
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
         return;
       }
     }
-    
+
     createProductMutation.mutate({ ...newProduct, imageUrl: finalImageUrl });
   };
   return (
@@ -65,7 +66,7 @@ const AdminDashboard = () => {
       <Navbar />
       <div className="flex-grow pt-24 pb-16 px-4 md:px-8 max-w-7xl mx-auto w-full">
         <h1 className="text-3xl font-display mb-8">Admin Dashboard</h1>
-        
+
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="mb-8 flex flex-wrap gap-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -74,7 +75,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="glass rounded-xl p-6 text-center">
@@ -91,12 +92,18 @@ const AdminDashboard = () => {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="categories">
             <div className="glass rounded-xl p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Manage Categories</h2>
-                <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm hover-neon">Add Category</button>
+                <button
+                  id="add-category-btn"
+                  onClick={() => setShowCategoryModal(true)}
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm hover-neon"
+                >
+                    Add Category
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
@@ -132,26 +139,26 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Manage Products</h2>
               </div>
-              
+
               <div className="mb-8 p-4 border border-border rounded-lg">
                 <h3 className="font-bold mb-4">Add New Product</h3>
                 <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input required placeholder="Product Name" className="bg-secondary px-4 py-2 rounded border" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                  <input required type="number" placeholder="Price" className="bg-secondary px-4 py-2 rounded border" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
-                  <input required type="number" placeholder="Stock" className="bg-secondary px-4 py-2 rounded border" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: Number(e.target.value)})} />
-                  <select required className="bg-secondary px-4 py-2 rounded border" value={newProduct.categoryId} onChange={e => setNewProduct({...newProduct, categoryId: e.target.value})}>
+                  <input required placeholder="Product Name" className="bg-secondary px-4 py-2 rounded border" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
+                  <input required type="number" placeholder="Price" className="bg-secondary px-4 py-2 rounded border" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: Number(e.target.value) })} />
+                  <input required type="number" placeholder="Stock" className="bg-secondary px-4 py-2 rounded border" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: Number(e.target.value) })} />
+                  <select required className="bg-secondary px-4 py-2 rounded border" value={newProduct.categoryId} onChange={e => setNewProduct({ ...newProduct, categoryId: e.target.value })}>
                     <option value="">Select Category</option>
                     {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  <textarea placeholder="Description" className="bg-secondary px-4 py-2 rounded border md:col-span-2" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
-                  
+                  <textarea placeholder="Description" className="bg-secondary px-4 py-2 rounded border md:col-span-2" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
+
                   <div className="md:col-span-2 p-4 border border-dashed border-border rounded">
                     <p className="text-sm font-bold mb-2">Product Image (Optional)</p>
                     <input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="mb-2 block text-sm" />
                     <p className="text-xs text-muted-foreground mb-2">- OR -</p>
-                    <input placeholder="Image URL" className="bg-secondary px-4 py-2 rounded border w-full" value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} />
+                    <input placeholder="Image URL" className="bg-secondary px-4 py-2 rounded border w-full" value={newProduct.imageUrl} onChange={e => setNewProduct({ ...newProduct, imageUrl: e.target.value })} />
                   </div>
-                  
+
                   <button type="submit" disabled={createProductMutation.isPending || uploadImageMutation.isPending} className="bg-primary text-primary-foreground px-4 py-2 rounded hover-neon md:col-span-2 disabled:opacity-50">
                     {createProductMutation.isPending || uploadImageMutation.isPending ? "Creating..." : "Create Product"}
                   </button>
@@ -187,7 +194,7 @@ const AdminDashboard = () => {
               <div className="text-center py-8 text-muted-foreground">No orders found.</div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="settings">
             <div className="glass rounded-xl p-6 max-w-2xl">
               <h2 className="text-xl font-bold mb-4">Admin Profile</h2>
@@ -197,6 +204,7 @@ const AdminDashboard = () => {
         </Tabs>
       </div>
       <Footer />
+      <AddCategoryModal isOpen={showcaegoryModal} onClose={() => setShowCategoryModal(false)} />
     </div>
   );
 };
