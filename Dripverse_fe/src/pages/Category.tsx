@@ -2,30 +2,11 @@ import { useParams,Link } from "react-router-dom";
 
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, Eye, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import product1 from "@/assets/product-1.jpg";
-import product2 from "@/assets/product-2.jpg";
-import product3 from "@/assets/product-3.jpg";
-import product4 from "@/assets/product-4.jpg";
-import product5 from "@/assets/product-5.jpg";
-import product6 from "@/assets/product-6.jpg";
-
-const allProducts = [
-  { id: 1, name: "Shadow Protagonist Tee", price: "₹1,499", tag: "NEW", image: product1, category: "t-shirts" },
-  { id: 2, name: "Moonlight Warrior Hoodie", price: "₹2,999", tag: "HOT", image: product2, category: "hoodies" },
-  { id: 3, name: "Kawaii Spirit Oversized", price: "₹1,299", tag: null, image: product3, category: "t-shirts" },
-  { id: 4, name: "Patch Bomber Jacket", price: "₹4,499", tag: "LIMITED", image: product4, category: "jackets" },
-  { id: 5, name: "Chibi Crew Cargo Pants", price: "₹2,199", tag: "NEW", image: product5, category: "accessories" },
-  { id: 6, name: "Anime Print Bucket Hat", price: "₹899", tag: null, image: product6, category: "accessories" },
-  { id: 7, name: "Demon Slayer Graphic Tee", price: "₹1,599", tag: "NEW", image: product1, category: "t-shirts" },
-  { id: 8, name: "Shinobi Stealth Hoodie", price: "₹3,299", tag: null, image: product2, category: "hoodies" },
-  { id: 9, name: "Mecha Pilot Jacket", price: "₹5,499", tag: "LIMITED", image: product4, category: "jackets" },
-  { id: 10, name: "Spirit Chain Necklace", price: "₹699", tag: null, image: product6, category: "accessories" },
-  { id: 11, name: "Ninja Scroll Tee", price: "₹1,399", tag: "HOT", image: product3, category: "t-shirts" },
-  { id: 12, name: "Sakura Storm Hoodie", price: "₹2,799", tag: null, image: product5, category: "hoodies" },
-];
+import { fetchWithoutAuth, getImageUrl } from "@/lib/api";
+import fallbackImage from "@/assets/product-1.jpg";
 
 const categoryTitles: Record<string, string> = {
   "new-drops": "NEW DROPS",
@@ -41,13 +22,30 @@ const Category = () => {
   const { slug } = useParams<{ slug: string }>();
   const [activeFilter, setActiveFilter] = useState("All");
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [allProductsData, setAllProductsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const title = categoryTitles[slug || ""] || "COLLECTION";
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchWithoutAuth("/products");
+        setAllProductsData(data);
+      } catch (error) {
+        console.error("failed to fetch category products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [slug]);
+  
+  const title = categoryTitles[slug || ""] || slug?.toUpperCase() || "COLLECTION";
 
   const products =
     slug === "new-drops"
-      ? allProducts.filter((p) => p.tag === "NEW" || p.tag === "HOT" || p.tag === "LIMITED")
-      : allProducts.filter((p) => p.category === slug);
+      ? allProductsData.slice(0, 8) 
+      : allProductsData.filter((p) => p.category?.name.toLowerCase() === slug?.toLowerCase());
 
   const filtered =
     activeFilter === "All"
@@ -57,6 +55,8 @@ const Category = () => {
   const toggleFav = (id: number) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
   };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +112,7 @@ const Category = () => {
               <Link to={`/product/${product.id}`} className="block">
                 <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-card mb-3">
                   <img
-                    src={product.image}
+                    src={getImageUrl(product.imageUrl) || product.image || fallbackImage}
                     alt={product.name}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -125,7 +125,7 @@ const Category = () => {
                 <h3 className="text-sm sm:text-base font-medium text-foreground group-hover:text-primary transition-colors duration-300 line-clamp-1">
                   {product.name}
                 </h3>
-                <p className="text-sm text-primary font-semibold mt-1">{product.price}</p>
+                <p className="text-sm text-primary font-semibold mt-1">₹{product.price.toLocaleString()}</p>
               </Link>
             </motion.div>
           ))}
