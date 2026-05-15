@@ -4,30 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Filter, X, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { fetchWithoutAuth } from "@/lib/api";
-
-import product1 from "@/assets/product-1.jpg";
-import product2 from "@/assets/product-2.jpg";
-import product3 from "@/assets/product-3.jpg";
-import product4 from "@/assets/product-4.jpg";
-import product5 from "@/assets/product-5.jpg";
-import product6 from "@/assets/product-6.jpg";
-
-
-const allProducts = [
-  { id: 1, name: "Shadow Protagonist Tee", price: 1499, tag: "NEW", image: product1, category: "T-Shirts" },
-  { id: 2, name: "Moonlight Warrior Hoodie", price: 2999, tag: "HOT", image: product2, category: "Hoodies" },
-  { id: 3, name: "Kawaii Spirit Oversized", price: 1299, tag: null, image: product3, category: "T-Shirts" },
-  { id: 4, name: "Patch Bomber Jacket", price: 4499, tag: "LIMITED", image: product4, category: "Jackets" },
-  { id: 5, name: "Chibi Crew Cargo Pants", price: 2199, tag: "NEW", image: product5, category: "Accessories" },
-  { id: 6, name: "Anime Print Bucket Hat", price: 899, tag: null, image: product6, category: "Accessories" },
-  { id: 7, name: "Demon Slayer Graphic Tee", price: 1599, tag: "NEW", image: product1, category: "T-Shirts" },
-  { id: 8, name: "Shinobi Stealth Hoodie", price: 3299, tag: null, image: product2, category: "Hoodies" },
-  { id: 9, name: "Mecha Pilot Jacket", price: 5499, tag: "LIMITED", image: product4, category: "Jackets" },
-  { id: 10, name: "Spirit Chain Necklace", price: 699, tag: null, image: product6, category: "Accessories" },
-  { id: 11, name: "Ninja Scroll Tee", price: 1399, tag: "HOT", image: product3, category: "T-Shirts" },
-  { id: 12, name: "Sakura Storm Hoodie", price: 2799, tag: null, image: product5, category: "Hoodies" },
-];
+import { fetchWithoutAuth, getImageUrl } from "@/lib/api";
+import fallbackImage from "@/assets/product-1.jpg";
 
 
 const priceRanges = [
@@ -40,6 +18,7 @@ const priceRanges = [
 const tags = ["All", "NEW", "HOT", "LIMITED"];
 
 const Shop = () => {
+  const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories ] = useState<string[]>(["All"]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedPrice, setSelectedPrice] = useState(priceRanges[0]);
@@ -47,20 +26,25 @@ const Shop = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchWithoutAuth("/categories");
-        const categoryNames = data.map((c: any) => c.name);
+        const [categoriesData, productsData] = await Promise.all([
+          fetchWithoutAuth("/categories"),
+          fetchWithoutAuth("/products")
+        ]);
+        const categoryNames = categoriesData.map((c: any) => c.name);
         setCategories(["All", ...categoryNames]);
+        setProducts(productsData);
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        console.error("Failed to fetch data:", error);
       }
     };
-    loadCategories();
+    loadData();
   }, []);
   
-  const filteredProducts = allProducts.filter((product) => {
-    const categoryMatch = selectedCategory === "All" || product.category === selectedCategory;
+  const filteredProducts = products.filter((product) => {
+    const productCategory = product.category?.name || "Uncategorized";
+    const categoryMatch = selectedCategory === "All" || productCategory === selectedCategory;
     const priceMatch = product.price >= selectedPrice.min && product.price <= selectedPrice.max;
     const tagMatch = selectedTag === "All" || product.tag === selectedTag;
     return categoryMatch && priceMatch && tagMatch;
@@ -255,7 +239,7 @@ const Shop = () => {
                     <Link to={`/product/${product.id}`} className="block">
                       <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-card mb-3">
                         <img
-                          src={product.image}
+                          src={getImageUrl(product.imageUrl) || product.image || fallbackImage}
                           alt={product.name}
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />

@@ -1,6 +1,14 @@
 const API_BASE_URL = "http://localhost:8080/api"
+export const BACKEND_URL = "http://localhost:8080"
 
 export const getAuthToken = () => localStorage.getItem("token");
+
+export const getImageUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    if (url.startsWith("/")) return `${BACKEND_URL}${url}`;
+    return `${BACKEND_URL}/${url}`;
+};
 
 export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
     const token = getAuthToken();

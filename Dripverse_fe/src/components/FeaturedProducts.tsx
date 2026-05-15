@@ -1,25 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
-import product1 from "@/assets/product-1.jpg";
-import product2 from "@/assets/product-2.jpg";
-import product3 from "@/assets/product-3.jpg";
-import product4 from "@/assets/product-4.jpg";
-import product5 from "@/assets/product-5.jpg";
-import product6 from "@/assets/product-6.jpg";
+import { fetchWithoutAuth, getImageUrl } from "@/lib/api";
+import fallbackImage from "@/assets/product-1.jpg";
 
-const products = [
-  { id: 1, name: "Shadow Protagonist Tee", price: "Rs 1,499", tag: "NEW", image: product1 },
-  { id: 2, name: "Moonlight Warrior Hoodie", price: "Rs 2,999", tag: "HOT", image: product2 },
-  { id: 3, name: "Kawaii Spirit Oversized", price: "Rs 1,299", tag: null, image: product3 },
-  { id: 4, name: "Patch Bomber Jacket", price: "Rs 4,499", tag: "LIMITED", image: product4 },
-  { id: 5, name: "Chibi Crew Cargo Pants", price: "Rs 2,199", tag: "NEW", image: product5 },
-  { id: 6, name: "Anime Print Bucket Hat", price: "Rs 899", tag: null, image: product6 },
-];
 
 const FeaturedProducts = () => {
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await fetchWithoutAuth("/prodcts");
+        setProducts(data.slice(0,6));
+      } catch (error) {
+        console.error("failed to fetch featured products:", error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const toggleFav = (id: number) => {
     setFavorites((prev) =>
@@ -60,7 +61,7 @@ const FeaturedProducts = () => {
             <Link to={`/product/${product.id}`} className="block">
               <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-card mb-3">
                 <img
-                  src={product.image}
+                  src={getImageUrl(product.imageUrl) || fallbackImage}
                   alt={product.name}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
@@ -74,7 +75,7 @@ const FeaturedProducts = () => {
               <h3 className="text-sm sm:text-base font-medium text-foreground group-hover:text-primary transition-colors duration-300 line-clamp-1">
                 {product.name}
               </h3>
-              <p className="text-sm text-primary font-semibold mt-1">{product.price}</p>
+              <p className="text-sm text-primary font-semibold mt-1">{product.price.toLocaleString()}</p>
             </Link> 
           </motion.div>
         ))}

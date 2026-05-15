@@ -1,162 +1,19 @@
-import { useState } from "react";
+import { fetchWithoutAuth, getImageUrl } from "@/lib/api";
+import { useState,useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ShoppingBag, ChevronRight, Minus, Plus, Star, Truck, Shield, RotateCcw } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import product1 from "@/assets/product-1.jpg";
-import product2 from "@/assets/product-2.jpg";
-import product3 from "@/assets/product-3.jpg";
-import product4 from "@/assets/product-4.jpg";
-import product5 from "@/assets/product-5.jpg";
-import product6 from "@/assets/product-6.jpg";
+import fallbackImage from "@/assets/product-1.jpg";
 
-const allProducts = [
-  {
-    id: "1",
-    name: "Shadow Protagonist Tee",
-    price: 1499,
-    tag: "NEW",
-    images: [product1, product2, product3],
-    description:
-      "Channel your inner anime hero with this premium oversized tee featuring an exclusive hand-drawn protagonist print. Made from 220 GSM ring-spun cotton for a heavyweight, luxurious feel.",
-    details: [
-      "220 GSM premium ring-spun cotton",
-      "Oversized relaxed fit",
-      "Exclusive anime protagonist print",
-      "Ribbed crew neckline",
-      "Pre-shrunk fabric",
-    ],
-    rating: 4.8,
-    reviews: 124,
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    colors: [
-      { name: "Shadow Black", value: "hsl(240, 10%, 8%)" },
-      { name: "Storm Grey", value: "hsl(240, 5%, 25%)" },
-      { name: "Midnight Navy", value: "hsl(220, 40%, 15%)" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Moonlight Warrior Hoodie",
-    price: 2999,
-    tag: "HOT",
-    images: [product2, product1, product4],
-    description:
-      "Step into the night with this heavyweight anime-print hoodie. Features a bold moonlit warrior illustration with glow-in-the-dark accents.",
-    details: [
-      "350 GSM fleece-lined cotton blend",
-      "Kangaroo pocket with hidden zip",
-      "Glow-in-the-dark print accents",
-      "Adjustable drawstring hood",
-      "Dropped shoulders for street fit",
-    ],
-    rating: 4.9,
-    reviews: 89,
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-      { name: "Onyx", value: "hsl(0, 0%, 8%)" },
-      { name: "Deep Purple", value: "hsl(270, 50%, 20%)" },
-    ],
-  },
-  {
-    id: "3",
-    name: "Kawaii Spirit Oversized",
-    price: 1299,
-    tag: null,
-    images: [product3, product5, product6],
-    description:
-      "Cute meets cool — this oversized tee features adorable kawaii spirit characters in a streetwear-ready silhouette.",
-    details: [
-      "200 GSM soft-touch cotton",
-      "Drop-shoulder oversized cut",
-      "Screen-printed kawaii graphics",
-      "Double-stitched seams",
-      "Unisex fit",
-    ],
-    rating: 4.6,
-    reviews: 67,
-    sizes: ["XS", "S", "M", "L", "XL"],
-    colors: [
-      { name: "Cloud White", value: "hsl(0, 0%, 92%)" },
-      { name: "Pastel Pink", value: "hsl(340, 60%, 75%)" },
-      { name: "Ink Black", value: "hsl(0, 0%, 6%)" },
-    ],
-  },
-  {
-    id: "4",
-    name: "Patch Bomber Jacket",
-    price: 4499,
-    tag: "LIMITED",
-    images: [product4, product2, product1],
-    description:
-      "Limited edition bomber jacket loaded with embroidered anime patches. A collector's statement piece for true otaku streetwear.",
-    details: [
-      "Nylon shell with satin lining",
-      "8 hand-stitched anime patches",
-      "Ribbed cuffs and hem",
-      "Two interior pockets",
-      "Limited run — numbered edition",
-    ],
-    rating: 5.0,
-    reviews: 42,
-    sizes: ["S", "M", "L", "XL"],
-    colors: [
-      { name: "Military Green", value: "hsl(100, 30%, 20%)" },
-      { name: "Jet Black", value: "hsl(0, 0%, 5%)" },
-    ],
-  },
-  {
-    id: "5",
-    name: "Chibi Crew Cargo Pants",
-    price: 2199,
-    tag: "NEW",
-    images: [product5, product3, product6],
-    description:
-      "Utility-first cargo pants featuring chibi character embroidery on the pockets. Relaxed tapered fit for maximum comfort and style.",
-    details: [
-      "100% twill cotton",
-      "6-pocket cargo design",
-      "Chibi character embroidery",
-      "Elastic waistband with drawcord",
-      "Tapered leg with elastic cuff",
-    ],
-    rating: 4.7,
-    reviews: 56,
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-      { name: "Cargo Khaki", value: "hsl(40, 20%, 30%)" },
-      { name: "Stealth Black", value: "hsl(0, 0%, 8%)" },
-    ],
-  },
-  {
-    id: "6",
-    name: "Anime Print Bucket Hat",
-    price: 899,
-    tag: null,
-    images: [product6, product5, product3],
-    description:
-      "Complete the look with this all-over anime print bucket hat. Reversible design — graphic on one side, solid on the other.",
-    details: [
-      "100% cotton twill",
-      "All-over sublimation print",
-      "Reversible solid interior",
-      "Embroidered eyelets",
-      "One size fits most",
-    ],
-    rating: 4.5,
-    reviews: 38,
-    sizes: ["One Size"],
-    colors: [
-      { name: "Print Black", value: "hsl(0, 0%, 8%)" },
-      { name: "Print White", value: "hsl(0, 0%, 90%)" },
-    ],
-  },
-];
+
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const product = allProducts.find((p) => p.id === id) || allProducts[0];
+  const [product, setProduct] = useState<any>(null);
+  const [related, setRelated] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
@@ -165,7 +22,36 @@ const ProductDetail = () => {
   const [isFav, setIsFav] = useState(false);
   const [activeTab, setActiveTab] = useState<"description" | "details">("description");
 
-  const related = allProducts.filter((p) => p.id !== product.id).slice(0, 3);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productData, allProductsData] = await Promise.all([
+          fetchWithoutAuth(`/products/${id}`),
+          fetchWithoutAuth("/products")
+        ]);
+        setProduct(productData);
+        setRelated(allProductsData.filter((p: any) => p.id.toString() !== id).slice(0, 3));
+      } catch (error) {
+        console.error("Failed to fetch product:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>;
+  if (!product) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Product not found</div>;
+
+  const productImages = product.imageUrl ? [getImageUrl(product.imageUrl)] : [fallbackImage];
+  const details = product.details || ["Premium quality", "Comfortable fit", "Durable materials"];
+  const sizes = product.sizes || ["S", "M", "L", "XL"];
+  const colors = product.colors || [{ name: "Default", value: "hsl(240, 10%, 8%)" }];
+  const rating = product.rating || 4.5;
+  const reviews = product.reviews || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -191,7 +77,7 @@ const ProductDetail = () => {
               <AnimatePresence mode="wait">
                 <motion.img
                   key={selectedImage}
-                  src={product.images[selectedImage]}
+                  src={productImages[selectedImage]}
                   alt={product.name}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: 0, scale: 1.05 }}
@@ -207,7 +93,7 @@ const ProductDetail = () => {
               )}
             </div>
             <div className="flex gap-3">
-              {product.images.map((img, i) => (
+              {productImages.map((img: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setSelectedImage(i)}
@@ -242,13 +128,13 @@ const ProductDetail = () => {
                     key={i}
                     size={14}
                     className={
-                      i < Math.floor(product.rating) ? "text-primary fill-primary" : "text-muted-foreground"
+                      i < Math.floor(rating) ? "text-primary fill-primary" : "text-muted-foreground"
                     }
                   />
                 ))}
               </div>
               <span className="text-sm text-muted-foreground">
-                {product.rating} ({product.reviews} reviews)
+                {rating} ({reviews} reviews)
               </span>
             </div>
 
@@ -259,10 +145,10 @@ const ProductDetail = () => {
             {/* Color selector */}
             <div className="mb-6">
               <p className="text-sm text-muted-foreground uppercase tracking-widest mb-3">
-                Color — <span className="text-foreground">{product.colors[selectedColor].name}</span>
+                Color — <span className="text-foreground">{colors[selectedColor]?.name}</span>
               </p>
               <div className="flex gap-3">
-                {product.colors.map((color, i) => (
+                {colors.map((color: any, i: number) => (
                   <button
                     key={i}
                     onClick={() => setSelectedColor(i)}
@@ -280,7 +166,7 @@ const ProductDetail = () => {
             <div className="mb-6">
               <p className="text-sm text-muted-foreground uppercase tracking-widest mb-3">Size</p>
               <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
+                {sizes.map((size: string) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
@@ -388,7 +274,7 @@ const ProductDetail = () => {
                     </p>
                   ) : (
                     <ul className="space-y-2">
-                      {product.details.map((d, i) => (
+                      {details.map((d: string, i: number) => (
                         <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                           {d}
@@ -412,7 +298,7 @@ const ProductDetail = () => {
               <Link key={p.id} to={`/product/${p.id}`} className="group">
                 <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-card mb-3">
                   <img
-                    src={p.images[0]}
+                    src={getImageUrl(p.imageUrl) || p.image || fallbackImage}
                     alt={p.name}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
