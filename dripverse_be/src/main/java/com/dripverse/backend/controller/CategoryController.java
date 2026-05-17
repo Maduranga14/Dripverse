@@ -28,4 +28,17 @@ public class CategoryController {
         Category saved = categoryRepository.save(category);
         return ResponseEntity.ok(saved);
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+        return categoryRepository.findById(id)
+                .map(category -> {
+                    category.setName(categoryDetails.getName());
+                    category.setDescription(categoryDetails.getDescription());
+                    category.setImageUrl(categoryDetails.getImageUrl());
+                    return ResponseEntity.ok(categoryRepository.save(category));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

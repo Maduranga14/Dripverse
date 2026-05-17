@@ -13,7 +13,7 @@ const FeaturedProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await fetchWithoutAuth("/prodcts");
+        const data = await fetchWithoutAuth("/products");
         setProducts(data.slice(0,6));
       } catch (error) {
         console.error("failed to fetch featured products:", error);
