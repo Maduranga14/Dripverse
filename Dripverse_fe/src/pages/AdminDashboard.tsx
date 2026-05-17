@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWithAuth } from "@/lib/api";
 import AddCategoryModal from "@/components/AddCategoryModal";
+import EditCategoryModal from "@/components/EditCategoryModal";
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const { data: categories = [] } = useQuery({
@@ -18,6 +19,8 @@ const AdminDashboard = () => {
   const [newProduct, setNewProduct] = useState({ name: "", description: "", price: 0, stock: 0, categoryId: "", imageUrl: "" });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showcaegoryModal, setShowCategoryModal] = useState(false);
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -120,7 +123,15 @@ const AdminDashboard = () => {
                         <td className="px-6 py-4">{cat.id}</td>
                         <td className="px-6 py-4">{cat.name}</td>
                         <td className="px-6 py-4">
-                          <button className="text-blue-500 hover:underline">Edit</button>
+                          <button
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setShowEditCategoryModal(true);
+                            }}
+                            className="text-blue-500 hover:underline"
+                          >
+                            Edit
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -205,6 +216,7 @@ const AdminDashboard = () => {
       </div>
       <Footer />
       <AddCategoryModal isOpen={showcaegoryModal} onClose={() => setShowCategoryModal(false)} />
+      <EditCategoryModal isOpen={showEditCategoryModal} onClose={() => setShowEditCategoryModal(false)} category={selectedCategory} />
     </div>
   );
 };
