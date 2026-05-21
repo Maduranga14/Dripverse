@@ -6,6 +6,7 @@ import { Heart, ShoppingBag, ChevronRight, Minus, Plus, Star, Truck, Shield, Rot
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import fallbackImage from "@/assets/product-1.jpg";
+import { useCart } from "@/contexts/CartContext";
 
 
 
@@ -21,6 +22,7 @@ const ProductDetail = () => {
   const [qty, setQty] = useState(1);
   const [isFav, setIsFav] = useState(false);
   const [activeTab, setActiveTab] = useState<"description" | "details">("description");
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,6 +45,13 @@ const ProductDetail = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (product) {
+      const currentSizes = product.sizes || ["S", "M", "L", "XL"];
+      if (currentSizes.length > 0 && !selectedSize) setSelectedSize(currentSizes[0]);
+    }
+  }, [product, selectedSize]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Loading...</div>;
   if (!product) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Product not found</div>;
 
@@ -52,6 +61,15 @@ const ProductDetail = () => {
   const colors = product.colors || [{ name: "Default", value: "hsl(240, 10%, 8%)" }];
   const rating = product.rating || 4.5;
   const reviews = product.reviews || 0;
+
+  const handleAddToCart = () => {
+    addToCart(
+      product.id,
+      qty,
+      selectedSize || sizes [0] || "one size",
+      colors[selectedColor]?.name || "Default"
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -204,7 +222,10 @@ const ProductDetail = () => {
 
             {/* Actions */}
             <div className="flex gap-3 mb-8">
-              <button className="flex-1 h-12 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-widest hover-neon flex items-center justify-center gap-2">
+              <button 
+                onClick={handleAddToCart}
+                className="flex-1 h-12 bg-primary text-primary-foreground font-semibold text-sm uppercase tracking-widest hover-neon flex items-center justify-center gap-2"
+              >
                 <ShoppingBag size={18} />
                 Add to Cart
               </button>

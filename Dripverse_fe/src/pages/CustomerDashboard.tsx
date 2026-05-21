@@ -12,11 +12,11 @@ const CustomerDashboard = () => {
 
                 <Tabs defaultValue= "orders" className="w-full">
                     <TabsList className="mb-8">
-                        <TabsTrigger Value="orders">Order History</TabsTrigger>
-                        <TabsTrigger Value="profile">Profile Settings</TabsTrigger>
+                        <TabsTrigger value="orders">Order History</TabsTrigger>
+                        <TabsTrigger value="profile">Profile Settings</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent Value="orders">
+                    <TabsContent value="orders">
                         <div className="glass rounded-xl p-6">
                             <h2 className="text-xl font-bold mb-4">Past Orders</h2>
                             <div className="text-muted-foreground py-8 text-center">
@@ -25,7 +25,7 @@ const CustomerDashboard = () => {
                         </div>
                     </TabsContent>
 
-                    <TabsContent Value="profile">
+                    <TabsContent value="profile">
                         <div className="glass rounded-xl p-6 max-w-2xl">
                             <h2 className="text-xl font-bold mb-4">Account Information</h2>
                             <form className="space-y-4">

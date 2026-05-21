@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, User, ShoppingBag, Heart, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -15,6 +16,7 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { totalItems } = useCart();
 
   const token = localStorage.getItem("token");
   const userStr = localStorage.getItem("user");
@@ -85,9 +87,11 @@ const Navbar = () => {
             </Link>
             <Link to="/cart" className="relative text-muted-foreground hover:text-primary transition-colors">
               <ShoppingBag size={20} />
-              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
+              {totalItems > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
             </Link>
             {user ? (
               <div className="relative">
