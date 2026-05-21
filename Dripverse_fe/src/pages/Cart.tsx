@@ -1,46 +1,49 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, X, ShoppingBag, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import product1 from "@/assets/product-1.jpg";
-import product2 from "@/assets/product-2.jpg";
-import product3 from "@/assets/product-3.jpg";
+import { getImageUrl } from "@/lib/api";
+import fallbackImage from "@/assets/product-1.jpg";
+import { useCart } from "@/contexts/CartContext";
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  size: string;
-  image: string;
-  qty: number;
-}
-
-const initialCart: CartItem[] = [
-  { id: 1, name: "Shadow Protagonist Tee", price: 1499, size: "L", image: product1, qty: 1 },
-  { id: 2, name: "Moonlight Warrior Hoodie", price: 2999, size: "M", image: product2, qty: 2 },
-  { id: 3, name: "Kawaii Spirit Oversized", price: 1299, size: "XL", image: product3, qty: 1 },
-];
 
 const Cart = () => {
-  const [items, setItems] = useState<CartItem[]>(initialCart);
+  const { items,updateQty, removeFromCart, cartTotal, totalItems, loading } = useCart();
+  const token = localStorage.getItem("token");
 
-  const updateQty = (id: number, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
-      )
-    );
-  };
-
-  const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shipping = subtotal > 2000 ? 0 : 149;
+  const subtotal = cartTotal;
+  const shipping = subtotal === 0 ? 0 : subtotal > 2000 ? 0 : 149;
   const total = subtotal + shipping;
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-24 pb-16 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh]">
+          <ShoppingBag className="mx-auto text-muted-foreground mb-4" size={64} />
+          <h2 className="font-display text-3xl mb-4">PLEASE LOGIN</h2>
+          <p className="text-muted-foreground mb-8 text-center">You need to be logged in to view your cart.</p>
+          <Link to="/login" className="bg-primary text-primary-foreground font-display tracking-wider px-8 py-3 rounded-lg hover-neon transition-all">
+            GO TO LOGIN
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-24 pb-16 px-4 sm:px-6 max-w-7xl mx-auto flex justify-center min-h-[60vh] items-center">
+          <p>Loading cart...</p>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,38 +87,38 @@ const Cart = () => {
                     className="glass rounded-xl p-4 flex gap-4"
                   >
                     <img
-                      src={item.image}
-                      alt={item.name}
+                      src={getImageUrl(item.product?.imageUrl) || fallbackImage}
+                      alt={item.product?.name}
                       className="w-24 h-28 sm:w-28 sm:h-32 object-cover rounded-lg"
                     />
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-foreground font-medium text-sm sm:text-base">{item.name}</h3>
-                        <p className="text-muted-foreground text-xs mt-1">Size: {item.size}</p>
+                        <h3 className="text-foreground font-medium text-sm sm:text-base">{item.product?.name}</h3>
+                        <p className="text-muted-foreground text-xs mt-1">Size: {item.size} {item.color && item.color !== 'Default' ? `| Color: ${item.color}` : ''}</p>
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQty(item.id, -1)}
+                            onClick={() => updateQty(item.id, item.quantity - 1)}
                             className="w-8 h-8 rounded-md bg-secondary border border-border flex items-center justify-center text-foreground hover:border-primary transition-colors"
                           >
                             <Minus size={14} />
                           </button>
-                          <span className="text-foreground font-medium w-8 text-center text-sm">{item.qty}</span>
+                          <span className="text-foreground font-medium w-8 text-center text-sm">{item.quantity}</span>
                           <button
-                            onClick={() => updateQty(item.id, 1)}
+                            onClick={() => updateQty(item.id, item.quantity + 1)}
                             className="w-8 h-8 rounded-md bg-secondary border border-border flex items-center justify-center text-foreground hover:border-primary transition-colors"
                           >
                             <Plus size={14} />
                           </button>
                         </div>
                         <p className="text-primary font-semibold text-sm sm:text-base">
-                          ₹{(item.price * item.qty).toLocaleString()}
+                          ₹{((item.product?.price || 0) * item.quantity).toLocaleString()}
                         </p>
                       </div>
                     </div>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeFromCart(item.id)}
                       className="text-muted-foreground hover:text-destructive transition-colors self-start"
                     >
                       <X size={18} />
@@ -135,8 +138,8 @@ const Cart = () => {
               <h2 className="font-display text-2xl text-foreground tracking-wider mb-6">ORDER SUMMARY</h2>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal ({items.reduce((s, i) => s + i.qty, 0)} items)</span>
-                  <span>₹{subtotal.toLocaleString()}</span>
+                  <span>Subtotal ({totalItems} items)</span>
+                  <span>${subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Shipping</span>
