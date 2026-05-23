@@ -63,6 +63,7 @@ public class ProductController {
                     product.setPrice(productDetails.getPrice());
                     product.setStock(productDetails.getStock());
                     product.setImageUrl(productDetails.getImageUrl());
+                    product.setDetails(productDetails.getDetails());
 
                     if (productDetails.getCategory() != null) {
                         Object catIdObj = productDetails.getCategory().getId();
