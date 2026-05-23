@@ -16,7 +16,7 @@ const AdminDashboard = () => {
     queryKey: ["products"],
     queryFn: () => fetchWithAuth("/products")
   });
-  const [newProduct, setNewProduct] = useState({ name: "", description: "", price: 0, stock: 0, categoryId: "", imageUrl: "" });
+  const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", stock: "", categoryId: "", imageUrl: "", details: "" });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showcaegoryModal, setShowCategoryModal] = useState(false);
   const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
@@ -45,7 +45,7 @@ const AdminDashboard = () => {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      setNewProduct({ name: "", description: "", price: 0, stock: 0, categoryId: "", imageUrl: "" });
+      setNewProduct({ name: "", description: "", price: "", stock: "", categoryId: "", imageUrl: "", details: ""});
       setSelectedFile(null);
     }
   });
@@ -62,7 +62,12 @@ const AdminDashboard = () => {
       }
     }
 
-    createProductMutation.mutate({ ...newProduct, imageUrl: finalImageUrl });
+    createProductMutation.mutate({ 
+      ...newProduct,
+      price: newProduct.price === "" ? 0 : Number(newProduct.price),
+      stock: newProduct.stock === "" ? 0: Number(newProduct.stock),
+      imageUrl: finalImageUrl
+    });
   };
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -155,14 +160,14 @@ const AdminDashboard = () => {
                 <h3 className="font-bold mb-4">Add New Product</h3>
                 <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input required placeholder="Product Name" className="bg-secondary px-4 py-2 rounded border" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
-                  <input required type="number" placeholder="Price" className="bg-secondary px-4 py-2 rounded border" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: Number(e.target.value) })} />
-                  <input required type="number" placeholder="Stock" className="bg-secondary px-4 py-2 rounded border" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: Number(e.target.value) })} />
+                  <input required  placeholder="Price" className="bg-secondary px-4 py-2 rounded border" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} />
+                  <input required type="number" placeholder="Qty" className="bg-secondary px-4 py-2 rounded border" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock:e.target.value })} />
                   <select required className="bg-secondary px-4 py-2 rounded border" value={newProduct.categoryId} onChange={e => setNewProduct({ ...newProduct, categoryId: e.target.value })}>
                     <option value="">Select Category</option>
                     {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   <textarea placeholder="Description" className="bg-secondary px-4 py-2 rounded border md:col-span-2" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
-
+                  <textarea placeholder="details(one per line)" className="bg-secondary px-4 py-2 rounded border md:col-span-2 h-28" value={newProduct.details} onChange={e => setNewProduct({ ...newProduct, details: e.target.value})} />
                   <div className="md:col-span-2 p-4 border border-dashed border-border rounded">
                     <p className="text-sm font-bold mb-2">Product Image (Optional)</p>
                     <input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="mb-2 block text-sm" />

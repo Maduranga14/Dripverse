@@ -56,7 +56,16 @@ const ProductDetail = () => {
   if (!product) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground">Product not found</div>;
 
   const productImages = product.imageUrl ? [getImageUrl(product.imageUrl)] : [fallbackImage];
-  const details = product.details || ["Premium quality", "Comfortable fit", "Durable materials"];
+  const parsedDetails = product.details
+    ? (Array.isArray(product.details)
+        ? product.details
+        : typeof product.details === 'string'
+          ? product.details.split('\n').map((line: string) => line.trim()).filter((line: string) => line.length > 0)
+          : [])
+    : [];
+  const details = parsedDetails.length > 0
+    ? parsedDetails
+    : ["Premium quality", "Comfortable fit", "Durable materials" ];
   const sizes = product.sizes || ["S", "M", "L", "XL"];
   const colors = product.colors || [{ name: "Default", value: "hsl(240, 10%, 8%)" }];
   const rating = product.rating || 4.5;

@@ -30,6 +30,9 @@ public class Product {
 
     private String imageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String details;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
@@ -82,6 +85,12 @@ public class Product {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getDetails() { return  details; }
+
+    public void setDetails(String details) {
+        this.details = details;
     }
 
     public Category getCategory() {
