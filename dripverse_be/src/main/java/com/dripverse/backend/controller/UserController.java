@@ -50,6 +50,17 @@ public class UserController {
                             user.setUsername(newUsername);
                         }
                     }
+                    if (payload.containsKey("email")) {
+                        String newEmail = payload.get("email") != null ? payload.get("email").toString().trim() : null;
+                        if (newEmail != null && !newEmail.isEmpty()) {
+                            if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+                                if (userRepository.existsByEmail(newEmail)) {
+                                    return ResponseEntity.badRequest().body("Email already exists");
+                                }
+                                user.setEmail(newEmail);
+                            }
+                        }
+                    }
 
                     if (payload.containsKey("firstName")) {
                         user.setFirstName(payload.get("firstName") != null ? payload.get("firstName").toString() : null);

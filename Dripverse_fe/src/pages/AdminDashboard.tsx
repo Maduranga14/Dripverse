@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,8 +6,78 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWithAuth } from "@/lib/api";
 import AddCategoryModal from "@/components/AddCategoryModal";
 import EditCategoryModal from "@/components/EditCategoryModal";
+import { toast } from "sonner";
+
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
+
+  
+  const { data: userProfile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: () => fetchWithAuth("/users/me")
+  });
+
+  
+  const [profile, setProfile] = useState({
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: ""
+  });
+
+  
+  useEffect(() => {
+    if (userProfile) {
+      setProfile({
+        username: userProfile.username || "",
+        email: userProfile.email || "",
+        firstName: userProfile.firstName || "",
+        lastName: userProfile.lastName || "",
+        phone: userProfile.phone || "",
+        address: userProfile.address || ""
+      });
+    }
+  }, [userProfile]);
+
+  // Mutation to submit profile edits
+  const updateProfileMutation = useMutation({
+    mutationFn: (updatedData: typeof profile) => fetchWithAuth("/users/me", {
+      method: "PUT",
+      body: JSON.stringify(updatedData)
+    }),
+    onSuccess: (response) => {
+      const updatedUser = response.user || response;
+      const newToken = response.token;
+      
+      if (newToken) {
+        localStorage.setItem("token", newToken);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      
+      
+      const cachedUser = localStorage.getItem("user");
+      if (cachedUser) {
+        try {
+          const userObj = JSON.parse(cachedUser);
+          localStorage.setItem("user", JSON.stringify({ ...userObj, ...updatedUser }));
+        } catch (e) {
+          console.error("Error updating local storage cache", e);
+        }
+      }
+      toast.success("Admin profile updated successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update profile details");
+    }
+  });
+
+  const handleProfileSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfileMutation.mutate(profile);
+  };
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: () => fetchWithAuth("/categories")
@@ -45,7 +115,7 @@ const AdminDashboard = () => {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      setNewProduct({ name: "", description: "", price: "", stock: "", categoryId: "", imageUrl: "", details: ""});
+      setNewProduct({ name: "", description: "", price: "", stock: "", categoryId: "", imageUrl: "", details: "" });
       setSelectedFile(null);
     }
   });
@@ -63,10 +133,10 @@ const AdminDashboard = () => {
     }
 
     createProductMutation.mutate({ 
-      ...newProduct,
-      price: newProduct.price === "" ? 0 : Number(newProduct.price),
-      stock: newProduct.stock === "" ? 0: Number(newProduct.stock),
-      imageUrl: finalImageUrl
+      ...newProduct, 
+      price: newProduct.price === "" ? 0 : Number(newProduct.price), 
+      stock: newProduct.stock === "" ? 0 : Number(newProduct.stock), 
+      imageUrl: finalImageUrl 
     });
   };
   return (
@@ -160,14 +230,15 @@ const AdminDashboard = () => {
                 <h3 className="font-bold mb-4">Add New Product</h3>
                 <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input required placeholder="Product Name" className="bg-secondary px-4 py-2 rounded border" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} />
-                  <input required  placeholder="Price" className="bg-secondary px-4 py-2 rounded border" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} />
-                  <input required type="number" placeholder="Qty" className="bg-secondary px-4 py-2 rounded border" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock:e.target.value })} />
+                  <input required type="number" placeholder="Price" className="bg-secondary px-4 py-2 rounded border" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} />
+                  <input required type="number" placeholder="Qty" className="bg-secondary px-4 py-2 rounded border" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} />
                   <select required className="bg-secondary px-4 py-2 rounded border" value={newProduct.categoryId} onChange={e => setNewProduct({ ...newProduct, categoryId: e.target.value })}>
                     <option value="">Select Category</option>
                     {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   <textarea placeholder="Description" className="bg-secondary px-4 py-2 rounded border md:col-span-2" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} />
-                  <textarea placeholder="details(one per line)" className="bg-secondary px-4 py-2 rounded border md:col-span-2 h-28" value={newProduct.details} onChange={e => setNewProduct({ ...newProduct, details: e.target.value})} />
+                  <textarea placeholder="Details (One per line)" className="bg-secondary px-4 py-2 rounded border md:col-span-2 h-28" value={newProduct.details} onChange={e => setNewProduct({ ...newProduct, details: e.target.value })} />
+
                   <div className="md:col-span-2 p-4 border border-dashed border-border rounded">
                     <p className="text-sm font-bold mb-2">Product Image (Optional)</p>
                     <input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="mb-2 block text-sm" />
@@ -213,8 +284,85 @@ const AdminDashboard = () => {
 
           <TabsContent value="settings">
             <div className="glass rounded-xl p-6 max-w-2xl">
-              <h2 className="text-xl font-bold mb-4">Admin Profile</h2>
-              <div className="text-center py-8 text-muted-foreground">Profile settings here...</div>
+              <h2 className="text-xl font-bold mb-4">Admin Profile Settings</h2>
+              {isProfileLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading admin details...</div>
+              ) : (
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Username</label>
+                      <input 
+                        type="text" 
+                        value={profile.username}
+                        onChange={e => setProfile({ ...profile, username: e.target.value })}
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2 focus:border-primary focus:outline-none" 
+                        placeholder="Username"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email Address</label>
+                      <input 
+                        type="email" 
+                        value={profile.email}
+                        onChange={e => setProfile({ ...profile, email: e.target.value })}
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2 focus:border-primary focus:outline-none" 
+                        placeholder="admin@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">First Name</label>
+                      <input 
+                        type="text" 
+                        value={profile.firstName}
+                        onChange={e => setProfile({ ...profile, firstName: e.target.value })}
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2 focus:border-primary focus:outline-none" 
+                        placeholder="First name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Last Name</label>
+                      <input 
+                        type="text" 
+                        value={profile.lastName}
+                        onChange={e => setProfile({ ...profile, lastName: e.target.value })}
+                        className="w-full bg-secondary border border-border rounded-lg px-4 py-2 focus:border-primary focus:outline-none" 
+                        placeholder="Last name"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Phone Number</label>
+                    <input 
+                      type="text" 
+                      value={profile.phone}
+                      onChange={e => setProfile({ ...profile, phone: e.target.value })}
+                      className="w-full bg-secondary border border-border rounded-lg px-4 py-2 focus:border-primary focus:outline-none" 
+                      placeholder="Phone number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Office/Shipping Address</label>
+                    <textarea 
+                      value={profile.address}
+                      onChange={e => setProfile({ ...profile, address: e.target.value })}
+                      className="w-full bg-secondary border border-border rounded-lg px-4 py-2 min-h-[100px] focus:border-primary focus:outline-none" 
+                      placeholder="Your office or shipping address"
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={updateProfileMutation.isPending}
+                    className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover-neon transition-all mt-4 disabled:opacity-50 font-medium"
+                  >
+                    {updateProfileMutation.isPending ? "Saving Changes..." : "Save Changes"}
+                  </button>
+                </form>
+              )}
             </div>
           </TabsContent>
         </Tabs>
