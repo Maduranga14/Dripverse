@@ -31,6 +31,15 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
+    @Column(length = 500)
+    private String shippingAddress;
+
+    @Column(length = 50)
+    private String phoneNumber;
+
+    @Column(length = 150)
+    private String receiverName;
+
     public Order () {}
 
     @PrePersist
@@ -88,5 +97,29 @@ public class Order {
     public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(null);
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getReceiverName() {
+        return receiverName;
+    }
+
+    public void setReceiverName(String receiverName) {
+        this.receiverName = receiverName;
     }
 }

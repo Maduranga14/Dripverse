@@ -16,6 +16,7 @@ import CustomerDashboard from "./pages/CustomerDashboard";
 import ProtectedRoute from "./components/ui/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { CartProvider } from "./contexts/CartContext";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
           
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<CustomerDashboard />} />
+            <Route path="/checkout" element={<Checkout />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
