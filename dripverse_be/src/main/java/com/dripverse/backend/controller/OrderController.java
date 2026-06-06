@@ -4,6 +4,7 @@ import com.dripverse.backend.model.Order;
 import com.dripverse.backend.model.OrderItem;
 import com.dripverse.backend.model.OrderStatus;
 import com.dripverse.backend.model.User;
+import com.dripverse.backend.repository.CartRepository;
 import com.dripverse.backend.repository.OrderRepository;
 import com.dripverse.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -23,6 +25,9 @@ public class OrderController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CartRepository cartRepository;
 
     @PostMapping
     public ResponseEntity<Order> placeOrder(@RequestBody Order order, Authentication authentication) {
@@ -39,7 +44,15 @@ public class OrderController {
             }
         }
 
-        return ResponseEntity.ok(orderRepository.save(order));
+        Order savedorder = orderRepository.save(order);
+
+
+        cartRepository.findByUser(user).ifPresent(cart -> {
+            cart.getItems().clear();
+            cartRepository.save(cart);
+        });
+
+        return ResponseEntity.ok(savedorder);
     }
 
     @GetMapping("/me")

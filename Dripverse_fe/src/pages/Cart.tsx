@@ -170,13 +170,15 @@ const Cart = () => {
                     APPLY
                   </button>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-primary text-primary-foreground font-display text-lg tracking-wider py-3 rounded-lg hover-neon transition-all flex items-center justify-center gap-2"
-                >
-                  CHECKOUT <ArrowRight size={18} />
-                </motion.button>
+                <Link to="/checkout" className="block w-full">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full bg-primary text-primary-foreground font-display text-lg tracking-wider py-3 rounded-lg hover-neon transition-all flex items-center justify-center gap-2"
+                  >
+                    CHECKOUT <ArrowRight size={18} />
+                  </motion.button>
+                </Link>
               </div>
             </motion.div>
           </div>
