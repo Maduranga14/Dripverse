@@ -80,6 +80,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<any>(null);
+  const [finalTotal, setFinalTotal] = useState(0);
 
   // Fetch user profile on load
   useEffect(() => {
@@ -249,6 +250,7 @@ const Checkout = () => {
 
       // 4. Trigger success & clear cart locally
       setPlacedOrder(response);
+      setFinalTotal(total);
       clearCart();
       setCheckoutSuccess(true);
       toast.success("Order placed successfully!");
@@ -274,6 +276,10 @@ const Checkout = () => {
   };
 
   if (checkoutSuccess) {
+    const displayTotal = placedOrder?.totalAmount !== undefined
+      ? Number(placedOrder.totalAmount)
+      : finalTotal;
+
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -356,8 +362,8 @@ const Checkout = () => {
             <div className="h-px bg-border mt-4" />
             
             <div className="flex justify-between items-center pt-2">
-              <span className="text-muted-foreground font-medium">Total Paid Amount:</span>
-              <span className="text-2xl font-bold text-primary">₹{total.toLocaleString()}</span>
+              <span className="text-muted-foreground font-medium">Total to Pay (COD):</span>
+              <span className="text-2xl font-bold text-primary">₹{displayTotal.toLocaleString()}</span>
             </div>
           </motion.div>
 

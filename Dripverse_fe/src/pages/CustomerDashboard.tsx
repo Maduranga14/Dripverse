@@ -224,7 +224,13 @@ const CustomerDashboard = () => {
 
                                                 
                                                 <div className="bg-secondary/10 px-4 py-3 sm:px-6 border-t border-border/30 flex justify-between items-center">
-                                                    <span className="text-xs text-muted-foreground font-medium">Total Paid:</span>
+                                                    <span className="text-xs text-muted-foreground font-medium">
+                                                        {order.status?.toUpperCase() === "DELIVERED"
+                                                            ? "Total Paid:"
+                                                            : order.status?.toUpperCase() === "CANCELLED"
+                                                                ? "Total Amount:"
+                                                                : "Total to Pay (COD):"}
+                                                    </span>
                                                     <span className="text-base sm:text-lg font-bold text-primary">₹{order.totalAmount?.toLocaleString()}</span>
                                                 </div>
                                             </div>
