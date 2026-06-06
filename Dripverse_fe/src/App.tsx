@@ -17,6 +17,7 @@ import ProtectedRoute from "./components/ui/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { CartProvider } from "./contexts/CartContext";
 import Checkout from "./pages/Checkout";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/favourites" element={<Favourites />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/about" element={<About />}/>
 
 
           <Route element= {<ProtectedRoute requiredRole="ROLE_ADMIN" />}>

@@ -3,21 +3,22 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchWithAuth } from "@/lib/api";
+import { fetchWithAuth, getImageUrl } from "@/lib/api";
 import AddCategoryModal from "@/components/AddCategoryModal";
 import EditCategoryModal from "@/components/EditCategoryModal";
 import { toast } from "sonner";
+import fallbackImage from "@/assets/product-1.jpg";
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
-  
+  // Fetch active admin profile details from /users/me endpoint
   const { data: userProfile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["userProfile"],
     queryFn: () => fetchWithAuth("/users/me")
   });
 
-  
+  // State to track form inputs
   const [profile, setProfile] = useState({
     username: "",
     email: "",
@@ -27,7 +28,7 @@ const AdminDashboard = () => {
     address: ""
   });
 
-  
+  // Populate form inputs from backend response when loaded
   useEffect(() => {
     if (userProfile) {
       setProfile({
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
 
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       
-      
+      // Update localStorage user info if cache is active
       const cachedUser = localStorage.getItem("user");
       if (cachedUser) {
         try {
@@ -85,6 +86,24 @@ const AdminDashboard = () => {
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
     queryFn: () => fetchWithAuth("/products")
+  });
+  const { data: orders = [], isLoading: isOrdersLoading } = useQuery<any[]>({
+    queryKey: ["adminOrders"],
+    queryFn: () => fetchWithAuth("/orders")
+  });
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: ({ orderId, status }: { orderId: number; status: string }) =>
+      fetchWithAuth(`/orders/${orderId}/status`, {
+        method: "POST",
+        body: JSON.stringify(status)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      toast.success("Order status updated successfully!");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update order status");
+    }
   });
   const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", stock: "", categoryId: "", imageUrl: "", details: "" });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -139,6 +158,27 @@ const AdminDashboard = () => {
       imageUrl: finalImageUrl 
     });
   };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      const d = new Date(dateString);
+      return d.toLocaleDateString("en-IN", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const totalRevenue = orders
+    .filter((o: any) => o.status?.toUpperCase() !== "CANCELLED")
+    .reduce((sum: number, o: any) => sum + Number(o.totalAmount || 0), 0);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -158,15 +198,15 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="glass rounded-xl p-6 text-center">
                 <h3 className="text-muted-foreground mb-2">Total Orders</h3>
-                <p className="text-4xl font-display">0</p>
+                <p className="text-4xl font-display">{orders.length}</p>
               </div>
               <div className="glass rounded-xl p-6 text-center">
                 <h3 className="text-muted-foreground mb-2">Total Revenue</h3>
-                <p className="text-4xl font-display">$0.00</p>
+                <p className="text-4xl font-display">${totalRevenue.toLocaleString()}</p>
               </div>
               <div className="glass rounded-xl p-6 text-center">
                 <h3 className="text-muted-foreground mb-2">Total Products</h3>
-                <p className="text-4xl font-display">0</p>
+                <p className="text-4xl font-display">{products.length}</p>
               </div>
             </div>
           </TabsContent>
@@ -277,8 +317,108 @@ const AdminDashboard = () => {
           </TabsContent>
           <TabsContent value="orders">
             <div className="glass rounded-xl p-6">
-              <h2 className="text-xl font-bold mb-4">Manage Orders</h2>
-              <div className="text-center py-8 text-muted-foreground">No orders found.</div>
+              <h2 className="text-xl font-bold mb-6">Manage Orders</h2>
+              
+              {isOrdersLoading ? (
+                <div className="text-center py-12 text-muted-foreground flex flex-col items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mb-3" />
+                  <p>Loading orders...</p>
+                </div>
+              ) : !orders || orders.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p className="text-lg">No orders found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs uppercase bg-secondary text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3">Order Info</th>
+                        <th className="px-4 py-3">Customer details</th>
+                        <th className="px-4 py-3">Items</th>
+                        <th className="px-4 py-3">Total</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order: any) => {
+                        const getStatusStyles = (status: string) => {
+                          switch (status?.toUpperCase()) {
+                            case "DELIVERED":
+                              return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+                            case "SHIPPED":
+                              return "bg-indigo-500/10 text-indigo-500 border-indigo-500/20";
+                            case "PROCESSING":
+                              return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+                            case "PENDING":
+                              return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+                            case "CANCELLED":
+                              return "bg-rose-500/10 text-rose-500 border-rose-500/20";
+                            default:
+                              return "bg-secondary text-foreground border-border";
+                          }
+                        };
+
+                        return (
+                          <tr key={order.id} className="border-b border-border/50 hover:bg-secondary/10 transition-colors">
+                            <td className="px-4 py-4 space-y-1">
+                              <span className="font-bold text-foreground block">#DRIP{order.id}</span>
+                              <span className="text-xs text-muted-foreground block">
+                                {formatDate(order.orderDate)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 space-y-1">
+                              <span className="font-medium text-foreground block">{order.receiverName}</span>
+                              <span className="text-xs text-muted-foreground block">{order.phoneNumber}</span>
+                              <span className="text-[11px] text-muted-foreground block max-w-xs truncate" title={order.shippingAddress}>
+                                {order.shippingAddress}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="space-y-2 max-w-xs">
+                                {order.items?.map((item: any) => (
+                                  <div key={item.id} className="flex items-center gap-2 text-xs">
+                                    <img
+                                      src={getImageUrl(item.product?.imageUrl) || fallbackImage}
+                                      alt={item.product?.name}
+                                      className="w-8 h-10 object-cover rounded bg-secondary shrink-0"
+                                    />
+                                    <span className="truncate flex-1 text-foreground" title={item.product?.name}>
+                                      {item.product?.name || "Product"} (x{item.quantity})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 font-bold text-foreground">
+                              ₹{order.totalAmount?.toLocaleString()}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getStatusStyles(order.status)}`}>
+                                {order.status || "PENDING"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <select
+                                value={order.status || "PENDING"}
+                                onChange={(e) => updateOrderStatusMutation.mutate({ orderId: order.id, status: e.target.value })}
+                                disabled={updateOrderStatusMutation.isPending}
+                                className="bg-secondary text-foreground text-xs rounded border border-border px-2 py-1 focus:outline-none focus:border-primary disabled:opacity-50"
+                              >
+                                <option value="PENDING">Pending</option>
+                                <option value="SHIPPED">Shipped</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="CANCELLED">Cancelled</option>
+                              </select>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </TabsContent>
 
